@@ -4,8 +4,8 @@ import { dolares, inflacion, riesgoPais, uva, ultimo } from "@/lib/mercado";
 
 export const runtime = "nodejs";
 
-// Para cambiar de modelo (ej. más barato/rápido): "claude-haiku-5-5".
-const MODEL = "claude-opus-5-5";
+// Rápido y barato para un tutor de chat. Más potente (pero caro): "claude-opus-5-5".
+const MODEL = "claude-haiku-5-5";
 
 function systemPrompt(nivel: string, mercado: string) {
   return `Sos el tutor de Plata Clara, una app argentina de educación financiera.
