@@ -11,6 +11,7 @@ export default async function Nav() {
       <nav className="flex items-center gap-5 text-sm">
         <Link href="/" className="text-lg font-bold">Plata Clara</Link>
         <Link href="/mercado">Mercado hoy</Link>
+        <Link href="/cuestionario">Cuestionario</Link>
         {user && <Link href="/mis-avances">Mis avances</Link>}
       </nav>
       {user ? (

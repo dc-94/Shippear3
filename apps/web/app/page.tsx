@@ -7,8 +7,9 @@ export default function Home() {
       <p className="mb-6 text-lg text-gray-600">
         Módulos cortos para entender inflación, dólar, ahorro e inversión. Ingresá con Google para guardar tu progreso.
       </p>
-      <div className="flex gap-3">
-        <Link href="/mercado" className="rounded-lg bg-black px-4 py-2 text-white">Ver mercado hoy</Link>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/cuestionario" className="rounded-lg bg-black px-4 py-2 text-white">Hacer el cuestionario</Link>
+        <Link href="/mercado" className="rounded-lg border px-4 py-2">Ver mercado hoy</Link>
         <Link href="/mis-avances" className="rounded-lg border px-4 py-2">Mis avances</Link>
       </div>
     </main>
