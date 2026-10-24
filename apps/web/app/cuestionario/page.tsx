@@ -19,13 +19,18 @@ export default async function CuestionarioPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="mb-2 text-3xl font-bold">Cuestionario de nivel</h1>
-      <p className="mb-6 text-gray-600">
-        Respondé estas preguntas para ubicar tu punto de partida: inicial,
-        intermedio o avanzado.
-      </p>
-      <Quiz quiz={quiz} isLoggedIn={!!user} />
-    </main>
+    <section className="view">
+      <div className="wrap">
+        <span className="eyebrow">Diagnóstico</span>
+        <h2 style={{ fontSize: "clamp(24px,3.5vw,32px)", margin: "6px 0 4px" }}>
+          Cuestionario de nivel
+        </h2>
+        <p className="muted" style={{ maxWidth: "60ch", marginBottom: 22 }}>
+          Respondé estas preguntas para ubicar tu punto de partida: inicial,
+          intermedio o avanzado.
+        </p>
+        <Quiz quiz={quiz} isLoggedIn={!!user} />
+      </div>
+    </section>
   );
 }

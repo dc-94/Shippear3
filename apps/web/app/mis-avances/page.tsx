@@ -3,18 +3,37 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function MisAvances() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const { data: progreso } = await supabase.from("lesson_progress").select("*");
+  const nombre = user.user_metadata?.full_name ?? user.email;
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">Hola, {user.user_metadata.full_name ?? user.email}</h1>
-      <p>Lecciones completadas: {progreso?.length ?? 0}</p>
-      <form action="/auth/signout" method="post">
-        <button type="submit">Salir</button>
-      </form>
-    </main>
+    <section className="view">
+      <div className="wrap">
+        <div className="dashtop">
+          <div className="who">
+            <h2>¡Hola, {nombre}!</h2>
+            <span className="sync">Sincronizado con tu cuenta · {user.email}</span>
+          </div>
+        </div>
+
+        <div className="stats">
+          <div className="stat" style={{ "--tc": "var(--accent)" } as React.CSSProperties}>
+            <div className="n">{progreso?.length ?? 0}</div>
+            <div className="l">Lecciones completadas</div>
+          </div>
+        </div>
+
+        <form action="/auth/signout" method="post" style={{ marginTop: 20 }}>
+          <button type="submit" className="btn ghost">
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

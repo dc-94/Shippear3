@@ -64,64 +64,86 @@ export default function Quiz({
   if (resultado) {
     return (
       <div>
-        <div className="rounded-xl border p-6">
-          <p className="text-sm text-gray-600">Tu nivel</p>
-          <p className="text-3xl font-bold">
+        <div className="side-card" style={{ borderLeft: "4px solid var(--accent)" }}>
+          <div className="cardlab">Tu nivel</div>
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: 32,
+              lineHeight: 1.1,
+            }}
+          >
             {NIVEL_LABEL[resultado.level] ?? resultado.level}
           </p>
-          <p className="mt-1 text-gray-600">
+          <p className="muted" style={{ marginTop: 2 }}>
             Puntaje: {resultado.score} / {maxScore(quiz)}
           </p>
 
           {estado === "guardando" && (
-            <p className="mt-3 text-sm text-gray-500">Guardando…</p>
+            <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>
+              Guardando…
+            </p>
           )}
           {estado === "guardado" && (
-            <p className="mt-3 text-sm text-green-600">✓ Guardado en tu cuenta.</p>
+            <p style={{ marginTop: 12, fontSize: 13, color: "var(--pos)" }}>
+              ✓ Guardado en tu cuenta.
+            </p>
           )}
           {estado === "error" && (
-            <p className="mt-3 text-sm text-red-600">
+            <p style={{ marginTop: 12, fontSize: 13, color: "var(--neg)" }}>
               No se pudo guardar. Probá de nuevo.
             </p>
           )}
           {estado === "sin-login" && (
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-gray-600">Ingresá para guardar tu nivel:</span>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <span className="muted" style={{ fontSize: 13 }}>
+                Ingresá para guardar tu nivel:
+              </span>
               <LoginButton />
             </div>
           )}
         </div>
 
         {/* Repaso de las respuestas */}
-        <ul className="mt-6 space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 20 }}>
           {quiz.questions.map((q) => {
             const elegida = answers[q.id];
             const ok = elegida === q.correct;
             const correcta = q.options.find((o) => o.id === q.correct)?.text;
             return (
-              <li key={q.id} className="rounded-lg border p-4">
-                <p className="font-medium">{q.text}</p>
+              <div key={q.id} className="panel">
+                <p style={{ fontWeight: 600 }}>{q.text}</p>
                 <p
-                  className={`mt-1 text-sm ${
-                    ok ? "text-green-600" : "text-red-600"
-                  }`}
+                  style={{
+                    marginTop: 6,
+                    fontSize: 14,
+                    color: ok ? "var(--pos)" : "var(--neg)",
+                  }}
                 >
                   {ok ? "Correcto" : "Incorrecto"} — respuesta correcta: {correcta}
                 </p>
-                <p className="mt-1 text-sm text-gray-600">{q.explanation}</p>
-              </li>
+                <p className="muted" style={{ marginTop: 4, fontSize: 14 }}>
+                  {q.explanation}
+                </p>
+              </div>
             );
           })}
-        </ul>
+        </div>
 
-        <div className="mt-6 flex gap-3">
-          <button onClick={rehacer} className="rounded-lg border px-4 py-2">
+        <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+          <button onClick={rehacer} className="btn ghost">
             Rehacer
           </button>
-          <Link
-            href="/mis-avances"
-            className="rounded-lg bg-black px-4 py-2 text-white"
-          >
+          <Link href="/mis-avances" className="btn primary">
             Ir a mis avances
           </Link>
         </div>
@@ -132,44 +154,44 @@ export default function Quiz({
   // --- Vista de preguntas ---
   return (
     <div>
-      <ol className="space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {quiz.questions.map((q, i) => (
-          <li key={q.id} className="rounded-lg border p-4">
-            <p className="font-medium">
+          <div key={q.id} className="panel">
+            <p className="q">
               {i + 1}. {q.text}
             </p>
-            <div className="mt-3 space-y-2">
-              {q.options.map((o) => (
-                <label
-                  key={o.id}
-                  className="flex cursor-pointer items-center gap-2"
-                >
-                  <input
-                    type="radio"
-                    name={q.id}
-                    value={o.id}
-                    checked={answers[q.id] === o.id}
-                    onChange={() =>
+            <div className="opts" style={{ marginTop: 12 }}>
+              {q.options.map((o, idx) => {
+                const sel = answers[q.id] === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    className={`opt${sel ? " selected" : ""}`}
+                    onClick={() =>
                       setAnswers((a) => ({ ...a, [q.id]: o.id }))
                     }
-                  />
-                  <span>{o.text}</span>
-                </label>
-              ))}
+                  >
+                    <span className="mk">{String.fromCharCode(65 + idx)}</span>{" "}
+                    {o.text}
+                  </button>
+                );
+              })}
             </div>
-          </li>
+          </div>
         ))}
-      </ol>
+      </div>
 
       <button
         onClick={enviar}
         disabled={!todasRespondidas}
-        className="mt-6 rounded-lg bg-black px-5 py-2 text-white disabled:opacity-40"
+        className="btn primary"
+        style={{ marginTop: 24, opacity: todasRespondidas ? 1 : 0.4 }}
       >
         Ver mi nivel
       </button>
       {!todasRespondidas && (
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>
           Respondé todas las preguntas para continuar.
         </p>
       )}

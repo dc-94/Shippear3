@@ -23,7 +23,7 @@ export type Cat = { n: string; c: string; d: string; ej: string[]; ic: string };
 export const CAT: Record<string, Cat> ={
     rf:{n:"Renta fija", c:"var(--blue)", d:"Le prestás plata a alguien (un banco, una empresa, el Estado) y te la devuelve con un interés pactado. Sabés, en condiciones normales, cuánto y cuándo vas a cobrar: más previsible y de menor riesgo, pero con un rendimiento más acotado.", ej:["Plazo fijo","Bonos","Obligaciones Negociables","FCI money market"], ic:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/>'},
     rv:{n:"Renta variable", c:"var(--violet)", d:"Comprás una parte de un activo (una empresa, una cripto) y tu resultado depende de cómo le vaya: no hay rendimiento asegurado. Podés ganar más que en renta fija, pero también podés perder. Más riesgo, más potencial.", ej:["Acciones","CEDEARs","Criptomonedas","FCI de acciones"], ic:'<path d="M4 18 L10 11 L14 15 L20 7"/><path d="M15 7h5v5"/>'},
-    fondos:{n:"Fondos (FCI)", c:"#4F46E5", d:"Invertís en conjunto con otras personas y lo administra un profesional.", ej:[], ic:'<path d="M12 3v9l6 4"/><circle cx="12" cy="12" r="9"/>'},
+    fondos:{n:"Fondos (FCI)", c:"var(--violet)", d:"Invertís en conjunto con otras personas y lo administra un profesional.", ej:[], ic:'<path d="M12 3v9l6 4"/><circle cx="12" cy="12" r="9"/>'},
     ma:{n:"Macro y ahorro", c:"var(--accent)", d:"No son instrumentos para invertir, sino variables y refugios que conviene entender.", ej:[], ic:'<path d="M4 20h16"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>'}
   };
 
@@ -79,7 +79,7 @@ export const CURSOS: Record<string, Curso> ={
       rel:["UVA","Inflación"],
       quiz:{q:"¿Por qué el plazo fijo es renta fija?", opts:[{t:"Porque el interés se pacta de antemano y sabés cuánto vas a cobrar",ok:true},{t:"Porque el rendimiento depende de la bolsa",ok:false},{t:"Porque nunca pierde contra la inflación",ok:false}], fb:"Porque el interés está pactado: sabés cuánto y cuándo vas a cobrar."}
     },
-    bonos:{t:"Bonos", cat:"rf", c:"#0891B2", nivel:"Intermedio", ic:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
+    bonos:{t:"Bonos", cat:"rf", c:"var(--blue)", nivel:"Intermedio", ic:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
       frase:"Prestarle al Estado o a una empresa a cambio de intereses.",
       corta:"Prestarle al Estado o a una empresa.",
       bloques:[
@@ -92,7 +92,7 @@ export const CURSOS: Record<string, Curso> ={
       rel:["Acción","Riesgo"],
       quiz:{q:"¿Qué sos cuando comprás un bono?", opts:[{t:"Dueño de la empresa",ok:false},{t:"Prestamista: te deben plata y te pagan intereses",ok:true},{t:"Dueño de un inmueble",ok:false}], fb:"Con un bono prestás plata; no sos dueño. Dueño serías con una acción."}
     },
-    fci:{t:"Fondos (FCI)", cat:"fondos", c:"#4F46E5", nivel:"Principiante", ic:'<path d="M12 3v9l6 4"/><circle cx="12" cy="12" r="9"/>',
+    fci:{t:"Fondos (FCI)", cat:"fondos", c:"var(--violet)", nivel:"Principiante", ic:'<path d="M12 3v9l6 4"/><circle cx="12" cy="12" r="9"/>',
       frase:"Invertir en conjunto, administrado por profesionales, desde poca plata.",
       corta:"Invertir junto a otros, de a poco.",
       bloques:[
@@ -129,7 +129,7 @@ export const CURSOS: Record<string, Curso> ={
       rel:["IPC","UVA"],
       quiz:{q:"Si tu inversión rinde menos que la inflación...", opts:[{t:"Ganás poder de compra",ok:false},{t:"Perdés poder de compra aunque tengas más pesos",ok:true},{t:"No pasa nada",ok:false}], fb:"Aunque tengas más pesos, si rinden menos que la inflación comprás menos que antes."}
     },
-    uva:{t:"UVA", cat:"ma", c:"#C026D3", nivel:"Intermedio", ic:'<path d="M12 21s-7-4.5-7-10a7 7 0 0 1 14 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/>',
+    uva:{t:"UVA", cat:"ma", c:"var(--pink)", nivel:"Intermedio", ic:'<path d="M12 21s-7-4.5-7-10a7 7 0 0 1 14 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/>',
       frase:"Una unidad que se mueve con la inflación.",
       corta:"La unidad que ajusta por inflación.",
       bloques:[
@@ -141,7 +141,7 @@ export const CURSOS: Record<string, Curso> ={
       rel:["Inflación","Plazo fijo"],
       quiz:{q:"¿Según qué se ajusta la UVA?", opts:[{t:"Según la inflación",ok:true},{t:"Según el precio del dólar blue",ok:false},{t:"Según la bolsa de Nueva York",ok:false}], fb:"La UVA se actualiza según la inflación (índice CER)."}
     },
-    pbi:{t:"PBI", cat:"ma", c:"#65A30D", nivel:"Intermedio", ic:'<path d="M4 20h16"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>',
+    pbi:{t:"PBI", cat:"ma", c:"var(--amber)", nivel:"Intermedio", ic:'<path d="M4 20h16"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/>',
       frase:"Cuánto produce un país.",
       corta:"Qué mide y por qué importa.",
       bloques:[
