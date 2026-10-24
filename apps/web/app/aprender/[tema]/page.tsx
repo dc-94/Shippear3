@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CAT, CURSOS, ORDER } from "@/lib/cursos";
 import Icon from "@/components/Icon";
 import MiniQuiz from "@/components/MiniQuiz";
+import CompletarLeccion from "@/components/CompletarLeccion";
 
 // Prerenderiza una página por cada tema conocido.
 export function generateStaticParams() {
@@ -54,6 +55,8 @@ export default async function LeccionPage({
             ))}
 
             <MiniQuiz quiz={x.quiz} />
+
+            <CompletarLeccion lessonId={tema} moduleId={x.cat} />
 
             <div className="lessonnav">
               {prev ? (
