@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LoginButton from "@/components/LoginButton";
-import { TEMAS } from "@/lib/temas";
+import Icon from "@/components/Icon";
+import { ORDER, CURSOS } from "@/lib/cursos";
 import { dolares, inflacion, riesgoPais, ultimo } from "@/lib/mercado";
 
 function fmtPeso(n: number | null | undefined) {
@@ -140,24 +141,24 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid-temas">
-            {TEMAS.map((t) => (
-              <Link
-                key={t.id}
-                href="/aprender"
-                className="tema"
-                style={{ "--tc": t.color } as React.CSSProperties}
-              >
-                <span
-                  className="ic"
-                  dangerouslySetInnerHTML={{
-                    __html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.icon}</svg>`,
-                  }}
-                />
-                <h3>{t.title}</h3>
-                <p>{t.corta}</p>
-                <span className="lvl">{t.nivel}</span>
-              </Link>
-            ))}
+            {ORDER.map((k) => {
+              const x = CURSOS[k];
+              return (
+                <Link
+                  key={k}
+                  href={`/aprender/${k}`}
+                  className="tema"
+                  style={{ "--tc": x.c } as React.CSSProperties}
+                >
+                  <span className="ic">
+                    <Icon paths={x.ic} />
+                  </span>
+                  <h3>{x.t}</h3>
+                  <p>{x.corta}</p>
+                  <span className="lvl">{x.nivel}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
