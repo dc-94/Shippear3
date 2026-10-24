@@ -1,11 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { dolares, inflacion, riesgoPais, uva, ultimo } from "@/lib/mercado";
 
 export const runtime = "nodejs";
 
-// Rápido y barato para un tutor de chat. Más potente (pero caro): "claude-opus-5-5".
-const MODEL = "claude-haiku-5-5";
+// Tutor con Google Gemini (tier gratuito). Para cambiar de modelo: gemini-2.5-flash, etc.
+const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 function systemPrompt(nivel: string, mercado: string) {
   return `Sos el tutor de Plata Clara, una app argentina de educación financiera.
@@ -47,11 +47,12 @@ async function getMercadoContext(): Promise<string> {
 type InMsg = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     return Response.json(
       {
         error:
-          "Falta configurar ANTHROPIC_API_KEY en apps/web/.env.local (y reiniciar el dev server).",
+          "Falta configurar GEMINI_API_KEY en apps/web/.env.local (y reiniciar el dev server).",
       },
       { status: 500 }
     );
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
   }
 
   const incoming = Array.isArray(body.messages) ? body.messages : [];
-  const messages: Anthropic.MessageParam[] = incoming
+  const messages = incoming
     .filter(
       (m) =>
         (m.role === "user" || m.role === "assistant") &&
@@ -98,46 +99,63 @@ export async function POST(req: Request) {
   }
   const mercado = await getMercadoContext();
 
-  const client = new Anthropic();
+  // Gemini usa roles "user" y "model", y system_instruction aparte.
+  const gemBody = {
+    system_instruction: { parts: [{ text: systemPrompt(nivel, mercado) }] },
+    contents: messages.map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    })),
+    generationConfig: { maxOutputTokens: 1024, temperature: 0.4 },
+  };
+
   try {
-    const resp = await client.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
-      output_config: { effort: "low" },
-      system: systemPrompt(nivel, mercado),
-      messages,
+    const r = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(gemBody),
     });
 
-    if (resp.stop_reason === "refusal") {
+    if (!r.ok) {
+      if (r.status === 400 || r.status === 403) {
+        return Response.json(
+          { error: "La API key de Gemini es inválida o no tiene permisos." },
+          { status: 500 }
+        );
+      }
+      if (r.status === 429) {
+        return Response.json(
+          { error: "Demasiadas consultas por ahora. Probá en un momento." },
+          { status: 429 }
+        );
+      }
+      return Response.json(
+        { error: "No se pudo generar la respuesta. Probá de nuevo." },
+        { status: 500 }
+      );
+    }
+
+    const data = await r.json();
+
+    // ¿Bloqueado por filtros de seguridad?
+    const cand = data?.candidates?.[0];
+    if (data?.promptFeedback?.blockReason || cand?.finishReason === "SAFETY") {
       return Response.json({
         reply:
           "Perdón, no puedo ayudarte con eso. ¿Querés que te explique algún concepto financiero?",
       });
     }
 
-    const text = resp.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
+    const text: string = (cand?.content?.parts ?? [])
+      .map((p: { text?: string }) => p.text ?? "")
+      .join("")
       .trim();
 
     return Response.json({ reply: text || "No tengo una respuesta para eso ahora." });
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) {
-      return Response.json(
-        { error: "La API key de Claude es inválida. Revisá ANTHROPIC_API_KEY." },
-        { status: 500 }
-      );
-    }
-    if (e instanceof Anthropic.RateLimitError) {
-      return Response.json(
-        { error: "Demasiadas consultas por ahora. Probá en un momento." },
-        { status: 429 }
-      );
-    }
     console.error("tutor error:", e);
     return Response.json(
-      { error: "No se pudo generar la respuesta. Probá de nuevo." },
+      { error: "No se pudo conectar con el tutor. Probá de nuevo." },
       { status: 500 }
     );
   }
