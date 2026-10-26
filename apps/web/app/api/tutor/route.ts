@@ -2,14 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { dolares, inflacion, riesgoPais, uva, ultimo } from "@/lib/mercado";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-// Tutor con Google Gemini (tier gratuito). Para cambiar de modelo: gemini-2.5-flash, etc.
-const GEMINI_MODEL = "gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Tutor con Google Gemini (tier gratuito), nueva Interactions API.
+// gemini-3.1-flash-lite: el más rápido/estable de los disponibles para keys nuevas.
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions";
+const TIMEOUT_MS = 22000;
 
 function systemPrompt(nivel: string, mercado: string) {
   return `Sos el tutor de Plata Clara, una app argentina de educación financiera.
-Tu trabajo es EXPLICAR conceptos financieros (inflación, dólar, acciones, bonos, plazo fijo, FCI, cripto, riesgo país, UVA, etc.) en castellano rioplatense claro y simple, con ejemplos de Argentina.
+Explicás conceptos financieros (inflación, dólar, acciones, bonos, plazo fijo, FCI, cripto, riesgo país, UVA, etc.) en castellano rioplatense claro y simple, con ejemplos de Argentina.
 
 Nivel del usuario: ${nivel}. Adaptá la profundidad y el vocabulario a ese nivel.
 
@@ -45,6 +48,33 @@ async function getMercadoContext(): Promise<string> {
 }
 
 type InMsg = { role: "user" | "assistant"; content: string };
+type GeminiStep = { type?: string; content?: { type?: string; text?: string }[] };
+
+// Llama a Gemini con timeout por intento; reintenta una vez ante 503/429/timeout.
+async function callGemini(apiKey: string, input: string): Promise<Response> {
+  const body = JSON.stringify({ model: GEMINI_MODEL, input, store: false });
+  let last: Response | null = null;
+  for (let intento = 0; intento < 2; intento++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    try {
+      const r = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+        body,
+        signal: ctrl.signal,
+      });
+      clearTimeout(t);
+      last = r;
+      if (r.status !== 503 && r.status !== 429) return r;
+    } catch (e) {
+      clearTimeout(t);
+      if (intento === 1) throw e; // en el último intento, propagá (abort/red)
+    }
+    await new Promise((res) => setTimeout(res, 900));
+  }
+  return last as Response;
+}
 
 export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -99,34 +129,30 @@ export async function POST(req: Request) {
   }
   const mercado = await getMercadoContext();
 
-  // Gemini usa roles "user" y "model", y system_instruction aparte.
-  const gemBody = {
-    system_instruction: { parts: [{ text: systemPrompt(nivel, mercado) }] },
-    contents: messages.map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    })),
-    generationConfig: { maxOutputTokens: 1024, temperature: 0.4 },
-  };
+  // La Interactions API toma un único `input`: instrucciones + conversación aplanada.
+  const transcript = messages
+    .map((m) => `${m.role === "user" ? "Usuario" : "Tutor"}: ${m.content}`)
+    .join("\n");
+  const input = `${systemPrompt(nivel, mercado)}
+
+--- Conversación (respondé como "Tutor", solo tu próxima respuesta) ---
+${transcript}
+Tutor:`;
 
   try {
-    const r = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(gemBody),
-    });
+    const r = await callGemini(apiKey, input);
 
     if (!r.ok) {
-      if (r.status === 400 || r.status === 403) {
+      if (r.status === 503 || r.status === 429) {
+        return Response.json(
+          { error: "El modelo está con mucha demanda. Probá de nuevo en unos segundos." },
+          { status: 503 }
+        );
+      }
+      if (r.status === 400 || r.status === 401 || r.status === 403) {
         return Response.json(
           { error: "La API key de Gemini es inválida o no tiene permisos." },
           { status: 500 }
-        );
-      }
-      if (r.status === 429) {
-        return Response.json(
-          { error: "Demasiadas consultas por ahora. Probá en un momento." },
-          { status: 429 }
         );
       }
       return Response.json(
@@ -136,27 +162,26 @@ export async function POST(req: Request) {
     }
 
     const data = await r.json();
-
-    // ¿Bloqueado por filtros de seguridad?
-    const cand = data?.candidates?.[0];
-    if (data?.promptFeedback?.blockReason || cand?.finishReason === "SAFETY") {
-      return Response.json({
-        reply:
-          "Perdón, no puedo ayudarte con eso. ¿Querés que te explique algún concepto financiero?",
-      });
-    }
-
-    const text: string = (cand?.content?.parts ?? [])
-      .map((p: { text?: string }) => p.text ?? "")
+    const steps: GeminiStep[] = Array.isArray(data?.steps) ? data.steps : [];
+    const salida = steps.filter((s) => s.type === "model_output").pop();
+    const text = (salida?.content ?? [])
+      .filter((c) => c.type === "text")
+      .map((c) => c.text ?? "")
       .join("")
-      .trim();
+      .trim()
+      .replace(/^Tutor:\s*/i, ""); // el modelo a veces repite el prefijo "Tutor:"
 
     return Response.json({ reply: text || "No tengo una respuesta para eso ahora." });
   } catch (e) {
+    const abort = e instanceof Error && e.name === "AbortError";
     console.error("tutor error:", e);
     return Response.json(
-      { error: "No se pudo conectar con el tutor. Probá de nuevo." },
-      { status: 500 }
+      {
+        error: abort
+          ? "El tutor tardó demasiado. Probá de nuevo."
+          : "No se pudo conectar con el tutor. Probá de nuevo.",
+      },
+      { status: abort ? 504 : 500 }
     );
   }
 }
